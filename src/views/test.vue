@@ -8,7 +8,7 @@
       ak="qkbK7mOzwHOzc2ku9m42FMMyrPzhD68x"
     >
     </baidu-map>
-    <div @click="reChockIn" class="reposition_box flex_align">
+    <div @click="handler" class="reposition_box flex_align">
       <i class="iconfont icon-dingwei-1"></i>
       重新定位
     </div>
@@ -182,13 +182,13 @@ export default {
             // map.addOverlay(circle);
 
             // 考勤的经纬度获取
-            var r = new BMap.Marker(pointAttendance);
-            map.addOverlay(r); // 标出考勤点的位置
-            // 计算签到与当前位置之间的差值
-            var distance = map.getDistance(point, pointAttendance).toFixed(2);
-            if (distance > that.Range) {
-              that.isSignFlag = false;
-            }
+            // var r = new BMap.Marker(pointAttendance);
+            // map.addOverlay(r); // 标出考勤点的位置
+            // // 计算签到与当前位置之间的差值
+            // var distance = map.getDistance(point, pointAttendance).toFixed(2);
+            // if (distance > that.Range) {
+            //   that.isSignFlag = false;
+            // }
           } else {
             alert("failed" + this.getStatus());
           }
@@ -197,12 +197,7 @@ export default {
       );
     },
     // 重新定位
-    reChockIn() {
-      var top_left_control = new BMap.ScaleControl({
-        anchor: BMAP_ANCHOR_TOP_LEFT,
-      });
-      map.addControl(top_left_control);
-    },
+    reChockIn() {},
     // 获取时间
     setNowTimes() {
       // var date = new Date();

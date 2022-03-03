@@ -17,14 +17,14 @@
         <img class="head_img" src="../images/head_img.png" alt="" />
         <div class="flex_1">
           <div class="flex_col">
+            <span class="user_name">{{ info.name }}</span>
             <div class="flex_row">
-              <span class="user_name">{{ info.name }}</span>
-              <div class="user_type_text flex_center">{{ info.type_text }}</div>
+              <span class="clock_in_time">打卡</span>
+              <div class="view_rules flex_center">(查看规则)</div>
             </div>
-            <span class="clock_in_time">{{ info.clock_in_time }}</span>
           </div>
         </div>
-        <div class="flex_col flex_center" @click="statistics">
+        <div class="flex_col flex_center">
           <i class="iconfont icon-tongji"></i>
           <span class="clock_in_time">统计</span>
         </div>
@@ -38,8 +38,20 @@
         </div>
         <span class="current_location_small">{{ currentLocation }}</span>
       </div>
-      <div class="clock_in_btn flex_col flex_center">
-        <span>打卡</span>
+      <div class="night_out_num flex_center">
+        <span> 你已违反学校规定，</span
+        ><span class="err_red">夜不归宿{{ info.nightOutNum }}次</span>
+      </div>
+      <div
+        @click="clickIn"
+        class="clock_in_btn flex_col flex_center"
+        :class="{
+          btn_grey: info.type == 1,
+          btn_green: info.type == 2,
+          btn_yellow: info.type == 3,
+        }"
+      >
+        <span>{{ info.clockInTxet }}</span>
         <span class="now_time">{{ nowTime }}</span>
       </div>
       <div class="clock_status flex_center">
@@ -85,26 +97,21 @@
 <script>
 import BaiduMap from "vue-baidu-map/components/map/Map.vue";
 export default {
-  name: "SignIn",
   data() {
     return {
-      sinnumber: "432",
-      center: { lng: 0, lat: 0 },
+      center: { lng: 116.331398, lat: 39.897445 },
       zoom: 10, //必须写上,自己因为忘记写一直无法自动定位
-      datetime: null,
-      nowTime: "10:12:22",
+      datetime: null, //时间定时器
+      nowTime: "10:12:22", //当前签到时间
       gc: {}, //地理解析
       pt: "", // 我的签到位置
       isSignFlag: true,
-      longitude: "", //经纬度
-      Range: 0, //签到范围
-      isshow_Singn_diglog: false,
-      sigNinTime: "",
+      Range: 500, //签到范围
       info: {
         name: "于庆伟",
-        type: "",
-        type_text: "正常",
-        clock_in_time: "未打卡",
+        type: 3,
+        nightOutNum: "1",
+        clockInTxet: "打卡",
       },
       currentLocation: "",
       clockStatus: "已进入打卡范围",
@@ -117,9 +124,9 @@ export default {
   },
   created() {},
   mounted() {
-    // this.datetime = setInterval(() => {
-    //   this.setNowTimes();
-    // }, 1000);
+    this.datetime = setInterval(() => {
+      this.setNowTimes();
+    }, 1000);
   },
   methods: {
     handler({ BMap, map }) {
@@ -135,12 +142,9 @@ export default {
       geolocation.getCurrentPosition(
         function (r) {
           if (r.accuracy == null) {
-            console.log(r);
-            console.log({ message: "请您打开浏览器定位权限" });
+            alert("请您打开浏览器定位权限");
           }
           if (this.getStatus() == BMAP_STATUS_SUCCESS) {
-            var mk = new BMap.Marker(r.point);
-            map.addOverlay(mk);
             map.panTo(r.point);
             console.log("您的位置：" + r.point.lng + "," + r.point.lat);
             point = new BMap.Point(r.point.lng, r.point.lat); // 获取自己的签到位置
@@ -157,6 +161,8 @@ export default {
                     result.addressComponents.district +
                     result.addressComponents.street +
                     result.addressComponents.streetNumber;
+                } else {
+                  alert("获取地址失败");
                 }
               }
             );
@@ -171,27 +177,27 @@ export default {
             // 创建标注对象并添加到地图
             var marker = new BMap.Marker(point, { icon: myIcon });
             map.addOverlay(marker);
-            var coordinate = that.longitude; // 设置考勤点经纬度  "121.63064001300,29.91.93.21.69.5930"
-            var arr = coordinate.split(","); // 切割经纬度
-            var lon = arr[0];
-            var lat = arr[1];
-            pointAttendance = new BMap.Point(lon, lat);
-            var circle = new BMap.Circle(pointAttendance, that.Range, {
-              // 考勤地点范围
-              fillColor: "blue", // 圆形颜色
-              strokeWeight: 1,
-              fillOpacity: 0.2,
-              strokeOpacity: 0.2,
-            });
-            map.addOverlay(circle);
+
+            // var circle = new BMap.Circle(
+            //   new BMap.Point(that.center.lng, that.center.lat),
+            //   500,
+            //   {
+            //     // 考勤地点范围
+            //     strokeColor: "blue",
+            //     strokeWeight: 2,
+            //     strokeOpacity: 0.5,
+            //   }
+            // );
+            // map.addOverlay(circle);
+
             // 考勤的经纬度获取
-            var r = new BMap.Marker(pointAttendance);
-            map.addOverlay(r); // 标出考勤点的位置
-            // 计算签到与当前位置之间的差值
-            var distance = map.getDistance(point, pointAttendance).toFixed(2);
-            if (distance > that.Range) {
-              that.isSignFlag = false;
-            }
+            // var r = new BMap.Marker(pointAttendance);
+            // map.addOverlay(r); // 标出考勤点的位置
+            // // 计算签到与当前位置之间的差值
+            // var distance = map.getDistance(point, pointAttendance).toFixed(2);
+            // if (distance > that.Range) {
+            //   that.isSignFlag = false;
+            // }
           } else {
             alert("failed" + this.getStatus());
           }
@@ -201,64 +207,39 @@ export default {
     },
     // 重新定位
     reChockIn() {
-      var top_left_control = new BMap.ScaleControl({
-        anchor: BMAP_ANCHOR_TOP_LEFT,
-      });
-      map.addControl(top_left_control);
+      location.reload();
     },
-    // 统计
-    statistics() {
-      this.$router.push({
-        path: "/test",
-      });
-    },
-    // 时间定时器
+    // 获取时间
     setNowTimes() {
-      //  根据插件获取时分秒
-      // this.nowTime = this.$moment().format("HH:mm:ss");
+      // var date = new Date();
+      // this.nowTime = date.toLocaleTimeString();
+      var d = new Date();
+      this.nowTime =
+        (d.getHours() >= 10 ? +d.getHours() : "0" + d.getHours()) +
+        ":" +
+        (d.getMinutes() >= 10 ? d.getMinutes() : "0" + d.getMinutes()) +
+        ":" +
+        (d.getSeconds() >= 10 ? d.getSeconds() : "0" + d.getSeconds());
     },
-    clickGcFn() {
-      // if (this.isSignFlag) {
-      //   this.sigNinTime = this.nowTime;
-      //   this.isshow_Singn_diglog = true;
-      //   this.gc.getLocation(this.pt, function (rs) {
-      //     var addComp = rs.addressComponents;
-      //     // alert(addComp.province + addComp.city + addComp.district + addComp.street + addComp.streetNumber);
-      //   });
-      // } else {
-      //   // this.$dialog.alert({ message: "您当前位置不在签到范围" });
-      // }
-    },
-    confirm() {
-      // let mydate = this.$moment().format("YYYY-MM-DD");
-      // this.$http
-      //   .post("/appoint/updaeSignTimeByOrderId", {
-      //     orderId: this.$route.query.orderId,
-      //     signTime: mydate + " " + this.sigNinTime,
-      //   })
-      //   .then((res) => {
-      //     // if(res.da){}
-      //     console.log(res);
-      //     if (res.data.code == 200) {
-      //       // 签到完成跳转到等待叫号页面
-      //       this.$router.push({
-      //         path: "/Call",
-      //         query: {
-      //           nowTime: this.sigNinTime,
-      //           place: this.$route.query.place,
-      //         },
-      //       });
-      //     } else {
-      //       // this.$dialog.alert({ message: res.data.msg });
-      //     }
-      //   });
+    clickIn() {
+      var startTime = "17:58:00"; //当日签到开始时间
+      var endTime = "18:00:00"; //当日签到结束时间
+
+      console.log();
+      if (this.nowTime <= startTime) {
+        console.log("时间还未开始");
+      } else if (this.nowTime >= startTime && this.nowTime <= endTime) {
+        console.log("已签到");
+      } else {
+        console.log("签到时间已过");
+      }
     },
   },
   // 销毁页面之后清空定时器
   beforeDestroy() {
-    // if (this.datetime) {
-    //   clearInterval(this.datetime);
-    // }
+    if (this.datetime) {
+      clearInterval(this.datetime);
+    }
   },
 };
 </script>
@@ -305,16 +286,14 @@ export default {
     font-size: 16px;
     font-weight: 500;
   }
-  .user_type_text {
-    padding: 0 3px;
-    border: 1px solid #018afb;
-    color: #018afb;
-    font-size: 11px;
-    line-height: 5px;
-  }
+
   .clock_in_time {
     font-size: 12px;
     color: #8d8d8d;
+  }
+  .view_rules {
+    color: #018afb;
+    font-size: 11px;
   }
   .icon-tongji {
     font-size: 20px;
@@ -323,7 +302,7 @@ export default {
 }
 // 用户位置栏
 .current_location_box {
-  margin: 20px 20px 40px;
+  margin: 20px;
   padding: 15px;
   box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.08);
 
@@ -388,18 +367,40 @@ export default {
     padding: 10px 0 0 0;
   }
 }
+// 夜不归宿警告
+.night_out_num {
+  font-size: 14px;
+  margin-bottom: 20px;
+  .err_red {
+    color: #e20404;
+  }
+}
+//签到按钮
 .clock_in_btn {
   margin: auto;
   width: 146px;
   height: 146px;
-  background: linear-gradient(180deg, #00a7fb 0%, #0289fc 100%);
-  box-shadow: 0px 5px 15px rgba(1, 149, 251, 0.3);
   border-radius: 50%;
   font-size: 23px;
   color: #fff;
+  background: linear-gradient(180deg, #00a7fb 0%, #0289fc 100%);
+  box-shadow: 0px 5px 15px rgba(1, 149, 251, 0.3);
   .now_time {
+    margin-top: 6px;
     font-size: 15px;
   }
+}
+.btn_grey {
+  background: linear-gradient(180deg, #dddddd 0%, #aaaaaa 100%);
+  box-shadow: 0px 5px 15px rgba(91, 91, 91, 0.3);
+}
+.btn_green {
+  background: linear-gradient(180deg, #00d697 0%, #00c186 100%);
+  box-shadow: 0px 5px 15px rgba(91, 91, 91, 0.3);
+}
+.btn_yellow {
+  background: linear-gradient(180deg, #feba49 0%, #f59c11 100%);
+  box-shadow: 0px 5px 15px #f6d49c;
 }
 .clock_status {
   margin-top: 30px;
