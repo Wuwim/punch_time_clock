@@ -12,7 +12,7 @@
       <i class="iconfont icon-dingwei-1"></i>
       重新定位
     </div>
-    <div v-show="true" class="card_box">
+    <div v-show="abnormalChockIn" class="card_box">
       <div class="title flex_between">
         <img class="head_img" src="../images/head_img.png" alt="" />
         <div class="flex_1">
@@ -20,7 +20,9 @@
             <span class="user_name">{{ info.name }}</span>
             <div class="flex_row">
               <span class="clock_in_time">打卡</span>
-              <div class="view_rules flex_center">(查看规则)</div>
+              <div class="view_rules flex_center" @click="goPromptText(0)">
+                (查看规则)
+              </div>
             </div>
           </div>
         </div>
@@ -32,13 +34,15 @@
       <div class="current_location_box">
         <div class="flex_align">
           <span class="current_location">当前位置</span>
-          <span class="current_location_blue current_location_small"
+          <span
+            class="current_location_blue current_location_small"
+            @click="goPromptText(1)"
             >(定位说明)</span
           >
         </div>
         <span class="current_location_small">{{ currentLocation }}</span>
       </div>
-      <div class="night_out_num flex_center">
+      <div v-show="info.nightOutNum > 0" class="night_out_num flex_center">
         <span> 你已违反学校规定，</span
         ><span class="err_red">夜不归宿{{ info.nightOutNum }}次</span>
       </div>
@@ -55,10 +59,18 @@
         <span class="now_time">{{ nowTime }}</span>
       </div>
       <div class="clock_status flex_center">
-        <i class="iconfont icon-shijian"></i>{{ clockStatus }}
+        <i
+          class="iconfont"
+          :class="{
+            'icon-dui': info.clockStatusType == 1,
+            'icon-gantanhao-yuankuang': info.clockStatusType == 2,
+            'icon-shijian': info.clockStatusType == 3,
+          }"
+        ></i
+        >{{ info.clockStatus }}
       </div>
     </div>
-    <div v-show="false" class="card_box">
+    <div v-show="!abnormalChockIn" class="card_box">
       <div class="current_location_box">
         <div class="flex_align">
           <span class="current_location">当前位置</span>
@@ -105,18 +117,20 @@ export default {
       nowTime: "10:12:22", //当前签到时间
       gc: {}, //地理解析
       pt: "", // 我的签到位置
-      isSignFlag: true,
       Range: 500, //签到范围
       info: {
         name: "于庆伟",
-        type: 3,
-        nightOutNum: "1",
+        type: 0, //  按钮颜色控制   1:灰色;2:绿色;3:黄色;
+        nightOutNum: 1, //夜不归宿次数
         clockInTxet: "打卡",
+        clockStatusType: 1, //按钮下提示icon   1:勾;2:感叹号;3:时钟;
+        clockStatus: "已进入打卡范围",
       },
-      currentLocation: "",
-      clockStatus: "已进入打卡范围",
-      uploader: [{ url: "https://img01.yzcdn.cn/vant/leaf.jpg" }],
-      leavingMessage: "",
+      isOverRange: false, //是否超出签到范围
+      currentLocation: "", //地址描述
+      uploader: [], //上传异常打卡图片
+      leavingMessage: "", //留言
+      abnormalChockIn: true,
     };
   },
   components: {
@@ -189,15 +203,6 @@ export default {
             //   }
             // );
             // map.addOverlay(circle);
-
-            // 考勤的经纬度获取
-            // var r = new BMap.Marker(pointAttendance);
-            // map.addOverlay(r); // 标出考勤点的位置
-            // // 计算签到与当前位置之间的差值
-            // var distance = map.getDistance(point, pointAttendance).toFixed(2);
-            // if (distance > that.Range) {
-            //   that.isSignFlag = false;
-            // }
           } else {
             alert("failed" + this.getStatus());
           }
@@ -211,8 +216,7 @@ export default {
     },
     // 获取时间
     setNowTimes() {
-      // var date = new Date();
-      // this.nowTime = date.toLocaleTimeString();
+      // 获取系统时间
       var d = new Date();
       this.nowTime =
         (d.getHours() >= 10 ? +d.getHours() : "0" + d.getHours()) +
@@ -220,19 +224,43 @@ export default {
         (d.getMinutes() >= 10 ? d.getMinutes() : "0" + d.getMinutes()) +
         ":" +
         (d.getSeconds() >= 10 ? d.getSeconds() : "0" + d.getSeconds());
+      // 按钮状态判断开始
+      var startTime = "16:00:00"; //当日签到开始时间
+      var endTime = "18:00:00"; //当日签到结束时间
+      if (this.nowTime <= startTime) {
+        this.info.type = 1;
+        this.info.clockInTxet = "打卡";
+
+        this.info.clockStatusType = 3;
+        this.info.clockStatus = "未到打卡时间暂时无法签到";
+      } else if (this.nowTime >= startTime && this.nowTime <= endTime) {
+        if (!this.isOverRange) {
+          this.info.type = 2;
+          this.info.clockInTxet = "异常打卡";
+          this.info.clockStatusType = 2;
+          this.info.clockStatus = "超出打卡范围";
+        } else {
+          this.info.type = 0;
+          this.info.clockInTxet = "打卡";
+        }
+      } else {
+        this.info.type = 3;
+        this.info.clockInTxet = "晚归打卡";
+      }
     },
     clickIn() {
-      var startTime = "17:58:00"; //当日签到开始时间
-      var endTime = "18:00:00"; //当日签到结束时间
-
-      console.log();
-      if (this.nowTime <= startTime) {
-        console.log("时间还未开始");
-      } else if (this.nowTime >= startTime && this.nowTime <= endTime) {
-        console.log("已签到");
+      if (this.info.type == 1) {
+        this.$toast("时间尚早，签到还未开始！");
+      } else if (this.info.type == 2) {
+        // this.$toast("异常签到成功，");
+        this.abnormalChockIn = false;
       } else {
-        console.log("签到时间已过");
       }
+    },
+    goPromptText(type) {
+      this.$router.push({
+        path: "/promptText?type=" + type, //0:定位说明 ; 1:打卡规则
+      });
     },
   },
   // 销毁页面之后清空定时器
@@ -417,7 +445,7 @@ export default {
   }
 }
 .abnormal_chock_in {
-  margin: 0 35px;
+  margin: 80px 35px 0;
   border-radius: 10px;
   font-size: 18px;
   padding: 10px 0;

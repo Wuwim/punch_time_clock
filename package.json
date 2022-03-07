@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve --host 172.19.160.54 ",
+    "serve": "vue-cli-service serve --host 172.19.183.224 ",
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint"
@@ -21,6 +21,7 @@
     "@vue/cli-plugin-unit-mocha": "~4.5.13",
     "@vue/cli-service": "~4.5.13",
     "@vue/test-utils": "^1.0.3",
+    "babel-plugin-import": "^1.13.3",
     "chai": "^4.1.2",
     "less": "^3.0.4",
     "less-loader": "^5.0.0",

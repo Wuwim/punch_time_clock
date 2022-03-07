@@ -10,15 +10,20 @@ const routes = [
     component: () => import('../views/index.vue')
   },
   {
-    path: '/test',
-    name: 'test',
-    component: () => import('../views/test.vue')
+    path: '/promptText',
+    name: 'promptText',
+    component: () => import('../views/promptText.vue')
   },
   {
-    path: '/test2',
-    name: 'test2',
-    component: () => import('../views/test2.vue')
-  }
+    path: '/statistics/statistics',
+    name: 'statistics',
+    component: () => import('../views/statistics/statistics.vue')
+  },
+  {
+    path: '/statistics/summary',
+    name: 'summary',
+    component: () => import('../views/statistics/summary.vue')
+  },
 ]
 
 const router = new VueRouter({
