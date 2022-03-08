@@ -26,7 +26,7 @@
             </div>
           </div>
         </div>
-        <div class="flex_col flex_center">
+        <div class="flex_col flex_center" @click="goStatistics">
           <i class="iconfont icon-tongji"></i>
           <span class="clock_in_time">统计</span>
         </div>
@@ -136,7 +136,18 @@ export default {
   components: {
     BaiduMap,
   },
-  created() {},
+  created() {
+    wx.getLocation({
+      type: "wgs84",
+      success(res) {
+        const latitude = res.latitude;
+        const longitude = res.longitude;
+        const speed = res.speed;
+        const accuracy = res.accuracy;
+        console.log(latitude, longitude, speed, accuracy);
+      },
+    });
+  },
   mounted() {
     this.datetime = setInterval(() => {
       this.setNowTimes();
@@ -256,6 +267,11 @@ export default {
         this.abnormalChockIn = false;
       } else {
       }
+    },
+    goStatistics() {
+      this.$router.push({
+        path: "/statistics/statistics",
+      });
     },
     goPromptText(type) {
       this.$router.push({

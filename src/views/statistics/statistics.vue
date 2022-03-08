@@ -4,7 +4,7 @@
     <div class="summary">
       <div class="flex_between">
         <span class="month font_bold">二月汇总</span>
-        <i class="iconfont icon-jiantou"></i>
+        <i class="iconfont icon-jiantou" @click="goSummary"></i>
       </div>
       <div class="flex_between count_box">
         <div class="flex_col flex_center">
@@ -90,6 +90,11 @@ export default {
     this.setMinMaxDay();
   },
   methods: {
+    goSummary() {
+      this.$router.push({
+        path: "/statistics/summary",
+      });
+    },
     formatDate(date) {
       let months = date.getMonth() + 1;
       let days = date.getDate();
@@ -215,6 +220,10 @@ export default {
       font-size: 14px;
       color: #9a9a9a;
     }
+  }
+  ::v-deep .van-calendar__selected-day {
+    border-radius: 50%;
+    background-color: #018afb;
   }
   ::v-deep .van-calendar__header {
     box-shadow: none;
